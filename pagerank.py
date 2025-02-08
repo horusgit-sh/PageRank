@@ -57,7 +57,23 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    result = {}
+    n = len(corpus)
+    if len(corpus[page]) == 0:
+        for link in corpus:
+            result[link] = 1 / n
+        return result
+
+    for link in corpus:
+        if link in corpus[page]:
+            result[link] = damping_factor / len(corpus[page]) + (1 - damping_factor) / n
+        else:
+            result[link] = (1 - damping_factor) / n
+
+    return result
+
+
+
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +85,24 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    result = {}
+    page = random.choice(list(corpus.keys()))
+    tot = n
+    while n > 0:
+        if page not in result:
+            result[page] = 0
+        result[page] += 1
+
+        prob = transition_model(corpus, page, damping_factor)
+        page = random.choices(list(prob.keys()), weights=prob.values(), k=1)[0]
+        n -= 1
+    for p in result:
+        result[p] /= tot
+    return result
+
+
+
+
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,7 +114,32 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    n = len(corpus)
+    result = {}
+    for page in corpus:
+        result[page] = 1 / n
+
+    final = 0.001
+    delta = float('inf')
+    while delta > final:
+        new_res = {}
+        delta = 0
+        for page in corpus:
+            rank = 0
+            for page1 in corpus:
+                if len(corpus[page1]) > 0:
+                    if page in corpus[page1]:
+                        rank += result[page1] / len(corpus[page1])
+                else:
+                    rank += result[page1] / n
+            new_res[page] = (1 - damping_factor) / n + damping_factor * rank
+            delta += abs(new_res[page] - result[page])
+        result = new_res
+    return result
+
+
+
+
 
 
 if __name__ == "__main__":
